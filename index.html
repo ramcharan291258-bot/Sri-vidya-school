@@ -7,43 +7,60 @@
     <meta name="description" content="Sri Vidya E.M. School, established in 2002 at Kesavaram, West Godavari, offers English Medium education from LKG to 7th Class." />
     <title>Sri Vidya E.M. School | Kesavaram</title>
     <script>
-      /* Production image compatibility: supplied images live at repository root. */
+      /* Keep all supplied production images same-origin. The repository stores them at root. */
       (() => {
-        const RAW = 'https://raw.githubusercontent.com/ramcharan291258-bot/Sri-vidya-school/main/';
-        const IMAGE_EXT = /\.(?:png|jpe?g|webp|gif|svg|avif)$/i;
+        const map = {
+          'principal-designed.png': '/event-portrait.jpeg',
+          'staff-group.png': '/event-group-1.jpeg',
+          'campus-original.jpeg': '/campus-original.jpeg',
+          'event-group-1.jpeg': '/event-group-1.jpeg',
+          'event-group-2.jpeg': '/event-group-2.jpeg',
+          'event-portrait.jpeg': '/event-portrait.jpeg',
+          'event-celebration.png': '/event-celebration.png',
+          'hero-campus.png': '/hero-campus.png',
+          'logo.png': '/logo.png'
+        };
         const normalize = (value) => {
           if (!value || typeof value !== 'string') return value;
-          if (/^(?:https?:|data:|blob:|\/\/)/i.test(value)) return value;
-          let path = value;
-          if (path.startsWith('/images/')) path = path.slice('/images/'.length);
-          else if (path.startsWith('images/')) path = path.slice('images/'.length);
-          else if (path.startsWith('/')) path = path.slice(1);
-          if (!IMAGE_EXT.test(path)) return value;
-          if (path === 'principal-designed.png') return RAW + 'event-portrait.jpeg';
-          if (path === 'staff-group.png') return RAW + 'event-group-1.jpeg';
-          return RAW + path;
+          if (/^(?:https?:|data:|blob:|\/\/)/i.test(value)) {
+            try {
+              const u = new URL(value, location.origin);
+              const name = u.pathname.split('/').pop();
+              if (map[name]) return map[name];
+            } catch (_) {}
+            return value;
+          }
+          const name = value.split('?')[0].split('/').pop();
+          return map[name] || value.replace(/^\/images\//, '/').replace(/^images\//, '/');
         };
-        const fix = (img) => {
-          if (!img || !img.getAttribute) return;
-          const raw = img.getAttribute('src');
-          const next = normalize(raw);
-          if (next && next !== raw) img.setAttribute('src', next);
+        const fixImages = () => document.querySelectorAll('img').forEach(img => {
+          const next = normalize(img.getAttribute('src'));
+          if (next && next !== img.getAttribute('src')) img.setAttribute('src', next);
+        });
+        const fixHero = () => {
+          const hero = document.querySelector('.hero');
+          if (hero) {
+            const current = getComputedStyle(hero).backgroundImage || '';
+            if (!current.includes('hero-campus.png')) {
+              hero.style.backgroundImage = "linear-gradient(90deg,rgba(4,27,67,.9),rgba(4,27,67,.52),rgba(4,27,67,.1)),url('/hero-campus.png')";
+              hero.style.backgroundSize = 'cover';
+              hero.style.backgroundPosition = 'center';
+            }
+          }
         };
+        const fix = () => { fixImages(); fixHero(); };
         const originalSetAttribute = Element.prototype.setAttribute;
         Element.prototype.setAttribute = function(name, value) {
           if (this instanceof HTMLImageElement && String(name).toLowerCase() === 'src') value = normalize(value);
           return originalSetAttribute.call(this, name, value);
         };
         const descriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
-        if (descriptor?.set) {
-          Object.defineProperty(HTMLImageElement.prototype, 'src', {
-            configurable: descriptor.configurable, enumerable: descriptor.enumerable,
-            get: descriptor.get, set(value) { descriptor.set.call(this, normalize(value)); }
-          });
-        }
-        const fixAll = () => document.querySelectorAll('img').forEach(fix);
-        new MutationObserver(fixAll).observe(document.documentElement, {subtree:true,childList:true,attributes:true,attributeFilter:['src']});
-        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fixAll); else fixAll();
+        if (descriptor?.set) Object.defineProperty(HTMLImageElement.prototype, 'src', {
+          configurable: descriptor.configurable, enumerable: descriptor.enumerable,
+          get: descriptor.get, set(value) { descriptor.set.call(this, normalize(value)); }
+        });
+        new MutationObserver(fix).observe(document.documentElement, {subtree:true,childList:true,attributes:true,attributeFilter:['src','style']});
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fix); else fix();
       })();
     </script>
   </head>
