@@ -1,12 +1,18 @@
 (function(){
   const RAW='https://raw.githubusercontent.com/ramcharan291258-bot/Sri-vidya-school/main/';
+  const ALIASES={
+    'principal-designed.png':'event-portrait.jpeg',
+    'staff-group.png':'event-group-1.jpeg'
+  };
   function fixUrl(value){
     if(!value || typeof value!=='string') return value;
     const v=value.trim();
     if(v.startsWith('https://') || v.startsWith('http://') || v.startsWith('data:') || v.startsWith('blob:')) return v;
-    if(v.startsWith('/images/items/')) return RAW+v.slice('/images/items/'.length);
-    if(v.startsWith('/images/')) return RAW+v.slice('/images/'.length);
-    return v;
+    let path='';
+    if(v.startsWith('/images/items/')) path=v.slice('/images/items/'.length);
+    else if(v.startsWith('/images/')) path=v.slice('/images/'.length);
+    else return v;
+    return RAW+(ALIASES[path]||path);
   }
   function fixBackground(style){
     if(!style) return style;
