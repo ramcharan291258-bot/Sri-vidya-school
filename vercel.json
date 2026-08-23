@@ -1,6 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
+    { "source": "/images/principal-designed.png", "destination": "/event-portrait.jpeg" },
+    { "source": "/images/staff-group.png", "destination": "/event-group-1.jpeg" },
     { "source": "/images/items/:path*", "destination": "/:path*" },
     { "source": "/images/:path*", "destination": "/:path*" }
   ]
