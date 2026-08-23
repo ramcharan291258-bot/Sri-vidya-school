@@ -1,11 +1,9 @@
-import { readData, writeData } from './_data.js';
-import { signToken, requireAuth } from './_auth.js';
+import { readData, writeData } from '../_data.js';
+import { signToken, requireAuth } from '../_auth.js';
 
 export default async function handler(req, res) {
   try {
-    if (req.method === 'GET') {
-      return res.status(200).json(await readData());
-    }
+    if (req.method === 'GET') return res.status(200).json(await readData());
     if (req.method === 'POST') {
       const { username, password } = req.body || {};
       const ok = username === (process.env.CMS_ADMIN_USER || 'admin') && password === (process.env.CMS_ADMIN_PASSWORD || 'change-me');

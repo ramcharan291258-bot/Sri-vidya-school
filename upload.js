@@ -1,5 +1,5 @@
 import { put, del } from '@vercel/blob';
-import { requireAuth } from './_auth.js';
+import { requireAuth } from '../_auth.js';
 
 export const config = { api: { bodyParser: false } };
 
