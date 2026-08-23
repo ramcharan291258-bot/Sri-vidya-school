@@ -1,0 +1,61 @@
+name: Local school image mapping
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  map-local-images:
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace remote placeholders with bundled school assets
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('main.jsx')
+          s = p.read_text(encoding='utf-8')
+          remote_to_local = {
+            'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1000&q=85':'/images/campus-original.jpeg',
+            'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1000&q=85':'/images/event-group-1.jpeg',
+            'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=1000&q=85':'/images/event-group-2.jpeg',
+            'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=1000&q=85':'/images/event-portrait.jpeg',
+            'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=1000&q=85':'/images/campus-original.jpeg',
+            'https://images.unsplash.com/photo-1526634332515-d56c0f7f2d07?auto=format&fit=crop&w=1000&q=85':'/images/event-group-1.jpeg',
+            'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1000&q=85':'/images/event-group-2.jpeg',
+            'https://images.unsplash.com/photo-1503095396549-807759245b35?auto=format&fit=crop&w=1000&q=85':'/images/event-celebration.png',
+            'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1000&q=85':'/images/hero-campus.png',
+            'https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=1000&q=85':'/images/event-group-2.jpeg',
+            'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?auto=format&fit=crop&w=1000&q=85':'/images/event-portrait.jpeg',
+            'https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=1000&q=85':'/images/event-group-1.jpeg',
+            'https://images.unsplash.com/photo-1584982751601-97dcc096659c?auto=format&fit=crop&w=1000&q=85':'/images/event-portrait.jpeg',
+            'https://images.unsplash.com/photo-1503676382389-4809596d5290?auto=format&fit=crop&w=1000&q=85':'/images/event-group-1.jpeg',
+            'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1000&q=85':'/images/event-celebration.png',
+            'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1000&q=85':'/images/campus-original.jpeg',
+            'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1000&q=85':'/images/event-group-2.jpeg',
+            'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1000&q=85':'/images/event-celebration.png',
+            'https://images.unsplash.com/photo-1503220317375-aaad61436b1b?auto=format&fit=crop&w=1000&q=85':'/images/hero-campus.png',
+            'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=1000&q=85':'/images/event-portrait.jpeg',
+            'https://images.unsplash.com/photo-1547153760-18fc86324498?auto=format&fit=crop&w=1000&q=85':'/images/event-celebration.png',
+            'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=1000&q=85':'/images/event-group-2.jpeg',
+            'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=1000&q=85':'/images/event-group-1.jpeg',
+            'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1000&q=85':'/images/staff-group.png',
+            'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1000&q=85':'/images/event-celebration.png',
+          }
+          for old, new in remote_to_local.items():
+            s = s.replace(old, new)
+          s = s.replace('/images/principal-original.png','/images/principal-designed.png')
+          s = s.replace('/images/principal.jpg','/images/principal-designed.png')
+          p.write_text(s, encoding='utf-8')
+      - name: Commit local image mapping
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add main.jsx
+          git diff --cached --quiet || git commit -m "Use bundled local school images [skip ci]"
+          git push
