@@ -4,12 +4,12 @@ export const seed = {
   heroTitle:'Sri Vidya E.M. School',
   heroSub:'Established 2002 • English Medium • LKG to 7th Class',
   about:'Sri Vidya E.M. School was established in 2002 at Kesavaram, Ganapavaram Mandal, West Godavari District, Andhra Pradesh. The school provides English Medium education from LKG to 7th Class and follows the State Syllabus. Along with academic education, the school encourages students to participate in sports, cultural programmes, science exhibitions, educational tours, yoga, music, dance, drawing, clubs and various celebrations.',
-  heroImage:'/hero-campus.png',
-  campusImage:'/campus-original.jpeg',
+  heroImage:'/images/hero-campus.png',
+  campusImage:'/images/campus-original.jpeg',
   principalName:'Velavalapalli Babji',
   principalRole:'Principal / Correspondent / Chairman',
   principalMessage:'Principal of Sri Vidya E.M. School. The website presents the school leadership with the official supplied photograph and school branding.',
-  principalImage:'/principal-designed.png',
+  principalImage:'/images/principal-designed.png',
   transportTitle:'School Bus & Van Service',
   transportDesc:'School Bus and Van Services are available for students. Contact the school for current route and transport details.',
   busDetails:'School Bus Service available.',
@@ -23,13 +23,13 @@ export const seed = {
   seoKeywords:'Sri Vidya E.M. School, Kesavaram school, English Medium School, West Godavari school, LKG to 7th Class',
   academics:[], facilities:[], activities:[],
   gallery:[
-    {src:'/campus-original.jpeg',title:'School Campus',cat:'Campus'},
-    {src:'/principal-designed.png',title:'Principal',cat:'Principal'},
-    {src:'/event-group-1.jpeg',title:'School Event',cat:'Events'},
-    {src:'/event-group-2.jpeg',title:'Student Activity',cat:'Activities'},
-    {src:'/event-portrait.jpeg',title:'School Programme',cat:'Events'},
-    {src:'/event-celebration.png',title:'Celebration',cat:'Celebrations'},
-    {src:'/staff-group.png',title:'School Team',cat:'Activities'}
+    {src:'/images/campus-original.jpeg',title:'School Campus',cat:'Campus'},
+    {src:'/images/principal-designed.png',title:'Principal',cat:'Principal'},
+    {src:'/images/event-group-1.jpeg',title:'School Event',cat:'Events'},
+    {src:'/images/event-group-2.jpeg',title:'Student Activity',cat:'Activities'},
+    {src:'/images/event-portrait.jpeg',title:'School Programme',cat:'Events'},
+    {src:'/images/event-celebration.png',title:'Celebration',cat:'Celebrations'},
+    {src:'/images/staff-group.png',title:'School Team',cat:'Activities'}
   ],
   news:[]
 };
@@ -38,8 +38,10 @@ const imageUrl = (value, fallback) => {
   if (typeof value !== 'string' || !value.trim()) return fallback;
   const v = value.trim();
   if (/^(https?:|data:|blob:)/i.test(v)) return v;
-  if (v.startsWith('/images/')) return v.replace(/^\/images\//, '/');
-  if (v.startsWith('images/')) return `/${v.slice('images/'.length)}`;
+  if (v.startsWith('/images/')) return v;
+  if (v.startsWith('images/')) return `/${v}`;
+  if (/^\/[A-Za-z0-9._-]+\.(?:png|jpe?g|webp|gif|svg)$/i.test(v)) return `/images${v}`;
+  if (/^[A-Za-z0-9._-]+\.(?:png|jpe?g|webp|gif|svg)$/i.test(v)) return `/images/${v}`;
   return v;
 };
 
@@ -57,7 +59,7 @@ function normalizeAcademic(item, index) {
     item.subtitle || item.sub || fallback[1] || '',
     item.description || item.desc || fallback[2] || '',
     item.tag || item.category || fallback[3] || '',
-    imageUrl(item.image || item.img || item.src, fallback[4] || '/placeholder.svg')
+    imageUrl(item.image || item.img || item.src, fallback[4] || '/images/items/placeholder.svg')
   ];
 }
 
@@ -74,7 +76,7 @@ function normalizeVisual(item, index, section) {
   return [
     item.title || item.name || fallback[0] || 'School Facility',
     item.description || item.desc || fallback[1] || '',
-    imageUrl(item.image || item.img || item.src, fallback[2] || '/placeholder.svg')
+    imageUrl(item.image || item.img || item.src, fallback[2] || '/images/items/placeholder.svg')
   ];
 }
 
