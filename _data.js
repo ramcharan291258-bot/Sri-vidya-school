@@ -34,6 +34,49 @@ export const seed = {
   news:[]
 };
 
+const imageUrl = (value, fallback) => {
+  if (typeof value !== 'string' || !value.trim()) return fallback;
+  const v = value.trim();
+  if (v.startsWith('/images/')) return v.replace(/^\/images\//, '/');
+  return v;
+};
+
+function normalizeAcademic(item) {
+  if (Array.isArray(item)) return item.length >= 5 ? item.slice(0, 5) : null;
+  if (!item || typeof item !== 'object') return null;
+  return [item.title || item.name || 'Academic Item', item.subtitle || item.sub || '', item.description || item.desc || '', item.tag || item.category || '', imageUrl(item.image || item.img || item.src, '/placeholder.svg')];
+}
+
+function normalizeVisual(item) {
+  if (Array.isArray(item)) return item.length >= 3 ? item.slice(0, 4) : null;
+  if (!item || typeof item !== 'object') return null;
+  return [item.title || item.name || 'School Facility', item.description || item.desc || '', imageUrl(item.image || item.img || item.src, '/placeholder.svg')];
+}
+
+function normalizeGallery(items) {
+  if (!Array.isArray(items)) return seed.gallery;
+  return items.filter(Boolean).map((item, i) => {
+    if (typeof item === 'string') return { src:imageUrl(item, seed.gallery[i % seed.gallery.length].src), title:`School Photo ${i + 1}`, cat:'School' };
+    return { src:imageUrl(item.src || item.image || item.img || item.url, seed.gallery[i % seed.gallery.length].src), title:item.title || item.name || `School Photo ${i + 1}`, cat:item.cat || item.category || 'School' };
+  }).filter(item => item.src);
+}
+
+function normalizeRemote(remote) {
+  const r = remote && typeof remote === 'object' ? remote : {};
+  return {
+    ...seed,
+    ...r,
+    heroImage:imageUrl(r.heroImage, seed.heroImage),
+    campusImage:imageUrl(r.campusImage, seed.campusImage),
+    principalImage:imageUrl(r.principalImage, seed.principalImage),
+    academics:Array.isArray(r.academics) ? r.academics.map(normalizeAcademic).filter(Boolean) : [],
+    facilities:Array.isArray(r.facilities) ? r.facilities.map(normalizeVisual).filter(Boolean) : [],
+    activities:Array.isArray(r.activities) ? r.activities.map(normalizeVisual).filter(Boolean) : [],
+    gallery:normalizeGallery(r.gallery),
+    news:Array.isArray(r.news) ? r.news.filter(n => n && typeof n === 'object').map(n => ({title:n.title || 'School News', date:n.date || '', description:n.description || n.desc || ''})) : []
+  };
+}
+
 async function findBlob() {
   const result = await list({ prefix: 'cms/site.json', limit: 20 });
   return result.blobs?.find(b => b.pathname === 'cms/site.json') || null;
@@ -45,23 +88,12 @@ export async function readData() {
   if (!blob) return seed;
   const res = await fetch(blob.url, { cache: 'no-store' });
   if (!res.ok) throw new Error(`CMS data fetch failed: ${res.status}`);
-  const remote = await res.json();
-  return {
-    ...seed,
-    ...remote,
-    heroImage: remote.heroImage || seed.heroImage,
-    campusImage: remote.campusImage || seed.campusImage,
-    principalImage: remote.principalImage || seed.principalImage,
-    gallery: Array.isArray(remote.gallery) && remote.gallery.length ? remote.gallery : seed.gallery,
-    academics: Array.isArray(remote.academics) ? remote.academics : seed.academics,
-    facilities: Array.isArray(remote.facilities) ? remote.facilities : seed.facilities,
-    activities: Array.isArray(remote.activities) ? remote.activities : seed.activities,
-    news: Array.isArray(remote.news) ? remote.news : seed.news
-  };
+  return normalizeRemote(await res.json());
 }
 
 export async function writeData(data) {
   if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error('BLOB_READ_WRITE_TOKEN is not configured');
-  await put('cms/site.json', JSON.stringify(data), { access: 'public', contentType: 'application/json', addRandomSuffix: false });
-  return data;
+  const safe = normalizeRemote(data);
+  await put('cms/site.json', JSON.stringify(safe), { access: 'public', contentType: 'application/json', addRandomSuffix: false });
+  return safe;
 }
