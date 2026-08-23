@@ -37,44 +37,76 @@ export const seed = {
 const imageUrl = (value, fallback) => {
   if (typeof value !== 'string' || !value.trim()) return fallback;
   const v = value.trim();
+  if (/^(https?:|data:|blob:)/i.test(v)) return v;
   if (v.startsWith('/images/')) return v.replace(/^\/images\//, '/');
+  if (v.startsWith('images/')) return `/${v.slice('images/'.length)}`;
   return v;
 };
 
-function normalizeAcademic(item) {
-  if (Array.isArray(item)) return item.length >= 5 ? item.slice(0, 5) : null;
-  if (!item || typeof item !== 'object') return null;
-  return [item.title || item.name || 'Academic Item', item.subtitle || item.sub || '', item.description || item.desc || '', item.tag || item.category || '', imageUrl(item.image || item.img || item.src, '/placeholder.svg')];
+function normalizeAcademic(item, index) {
+  const fallback = seed.academics[index] || [];
+  if (Array.isArray(item)) {
+    if (item.length < 5) return fallback.length ? [...fallback] : null;
+    const out = item.slice(0, 5);
+    out[4] = imageUrl(out[4], fallback[4]);
+    return out;
+  }
+  if (!item || typeof item !== 'object') return fallback.length ? [...fallback] : null;
+  return [
+    item.title || item.name || fallback[0] || 'Academic Item',
+    item.subtitle || item.sub || fallback[1] || '',
+    item.description || item.desc || fallback[2] || '',
+    item.tag || item.category || fallback[3] || '',
+    imageUrl(item.image || item.img || item.src, fallback[4] || '/placeholder.svg')
+  ];
 }
 
-function normalizeVisual(item) {
-  if (Array.isArray(item)) return item.length >= 3 ? item.slice(0, 4) : null;
-  if (!item || typeof item !== 'object') return null;
-  return [item.title || item.name || 'School Facility', item.description || item.desc || '', imageUrl(item.image || item.img || item.src, '/placeholder.svg')];
+function normalizeVisual(item, index, section) {
+  const fallbackList = seed[section] || [];
+  const fallback = fallbackList[index] || [];
+  if (Array.isArray(item)) {
+    if (item.length < 3) return fallback.length ? [...fallback] : null;
+    const out = item.slice(0, 4);
+    out[2] = imageUrl(out[2], fallback[2]);
+    return out;
+  }
+  if (!item || typeof item !== 'object') return fallback.length ? [...fallback] : null;
+  return [
+    item.title || item.name || fallback[0] || 'School Facility',
+    item.description || item.desc || fallback[1] || '',
+    imageUrl(item.image || item.img || item.src, fallback[2] || '/placeholder.svg')
+  ];
 }
 
 function normalizeGallery(items) {
-  if (!Array.isArray(items)) return seed.gallery;
-  return items.filter(Boolean).map((item, i) => {
-    if (typeof item === 'string') return { src:imageUrl(item, seed.gallery[i % seed.gallery.length].src), title:`School Photo ${i + 1}`, cat:'School' };
-    return { src:imageUrl(item.src || item.image || item.img || item.url, seed.gallery[i % seed.gallery.length].src), title:item.title || item.name || `School Photo ${i + 1}`, cat:item.cat || item.category || 'School' };
-  }).filter(item => item.src);
+  if (!Array.isArray(items) || items.length === 0) return seed.gallery.map(x => ({...x}));
+  const result = items.filter(Boolean).map((item, i) => {
+    const fallback = seed.gallery[i % seed.gallery.length];
+    if (typeof item === 'string') return { src:imageUrl(item, fallback.src), title:`School Photo ${i + 1}`, cat:'School' };
+    return {
+      src:imageUrl(item.src || item.image || item.img || item.url, fallback.src),
+      title:item.title || item.name || fallback.title || `School Photo ${i + 1}`,
+      cat:item.cat || item.category || fallback.cat || 'School'
+    };
+  }).filter(item => typeof item.src === 'string' && item.src.trim());
+  return result.length ? result : seed.gallery.map(x => ({...x}));
 }
 
 function normalizeRemote(remote) {
   const r = remote && typeof remote === 'object' ? remote : {};
-  return {
+  const safe = {
     ...seed,
     ...r,
     heroImage:imageUrl(r.heroImage, seed.heroImage),
     campusImage:imageUrl(r.campusImage, seed.campusImage),
     principalImage:imageUrl(r.principalImage, seed.principalImage),
-    academics:Array.isArray(r.academics) ? r.academics.map(normalizeAcademic).filter(Boolean) : [],
-    facilities:Array.isArray(r.facilities) ? r.facilities.map(normalizeVisual).filter(Boolean) : [],
-    activities:Array.isArray(r.activities) ? r.activities.map(normalizeVisual).filter(Boolean) : [],
+    academics:Array.isArray(r.academics) && r.academics.length ? r.academics.map((item,i) => normalizeAcademic(item,i)).filter(Boolean) : seed.academics.map(x => [...x]),
+    facilities:Array.isArray(r.facilities) && r.facilities.length ? r.facilities.map((item,i) => normalizeVisual(item,i,'facilities')).filter(Boolean) : seed.facilities.map(x => [...x]),
+    activities:Array.isArray(r.activities) && r.activities.length ? r.activities.map((item,i) => normalizeVisual(item,i,'activities')).filter(Boolean) : seed.activities.map(x => [...x]),
     gallery:normalizeGallery(r.gallery),
     news:Array.isArray(r.news) ? r.news.filter(n => n && typeof n === 'object').map(n => ({title:n.title || 'School News', date:n.date || '', description:n.description || n.desc || ''})) : []
   };
+  return safe;
 }
 
 async function findBlob() {
