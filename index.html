@@ -6,6 +6,49 @@
     <meta name="theme-color" content="#0b4ea2" />
     <meta name="description" content="Sri Vidya E.M. School, established in 2002 at Kesavaram, West Godavari, offers English Medium education from LKG to 7th Class." />
     <title>Sri Vidya E.M. School | Kesavaram</title>
+    <script>
+      /* Asset-path compatibility: the repository stores public assets at the project root,
+         while older CMS data references /images/... paths. Normalize them before/after React renders. */
+      (() => {
+        const fallback = {
+          '/principal-designed.png': '/event-portrait.jpeg',
+          '/staff-group.png': '/event-group-1.jpeg',
+          '/images/principal-designed.png': '/event-portrait.jpeg',
+          '/images/staff-group.png': '/event-group-1.jpeg'
+        };
+        const normalize = (value) => {
+          if (!value || typeof value !== 'string') return value;
+          if (fallback[value]) return fallback[value];
+          if (value.startsWith('/images/')) return '/' + value.slice('/images/'.length);
+          return value;
+        };
+        const fix = (img) => {
+          if (!img || !img.getAttribute) return;
+          const raw = img.getAttribute('src');
+          const next = normalize(raw);
+          if (next && next !== raw) img.setAttribute('src', next);
+        };
+        const originalSetAttribute = Element.prototype.setAttribute;
+        Element.prototype.setAttribute = function(name, value) {
+          if (this instanceof HTMLImageElement && String(name).toLowerCase() === 'src') {
+            value = normalize(value);
+          }
+          return originalSetAttribute.call(this, name, value);
+        };
+        const originalSrcDescriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+        if (originalSrcDescriptor?.set) {
+          Object.defineProperty(HTMLImageElement.prototype, 'src', {
+            configurable: originalSrcDescriptor.configurable,
+            enumerable: originalSrcDescriptor.enumerable,
+            get: originalSrcDescriptor.get,
+            set(value) { originalSrcDescriptor.set.call(this, normalize(value)); }
+          });
+        }
+        const fixAll = () => document.querySelectorAll('img').forEach(fix);
+        new MutationObserver(fixAll).observe(document.documentElement, {subtree: true, childList: true, attributes: true, attributeFilter: ['src']});
+        window.addEventListener('DOMContentLoaded', fixAll);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
