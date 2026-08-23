@@ -1,11 +1,6 @@
 (function () {
   'use strict';
 
-  // The production repository stores its bundled assets at the repository root
-  // (for example /hero-campus.png and /campus-original.jpeg), while some of
-  // the older CMS/default data still contains the legacy /images/... prefix.
-  // Normalize that legacy prefix at the DOM boundary so CMS updates can never
-  // make an otherwise valid local asset disappear.
   function normalizeLocalAsset(value) {
     if (typeof value !== 'string') return value;
     const v = value.trim();
@@ -16,20 +11,37 @@
     return v;
   }
 
+  function isValidSrc(value) {
+    return typeof value === 'string' && value.trim() !== '';
+  }
+
   function normalizeImage(img) {
-    if (!img || img.dataset.imageFixChecked === '1') return;
-    img.dataset.imageFixChecked = '1';
-
-    const current = img.getAttribute('src');
+    if (!img) return;
+    const current = img.getAttribute('src') || '';
     const fixed = normalizeLocalAsset(current);
-    if (fixed && fixed !== current) img.setAttribute('src', fixed);
 
+    if (isValidSrc(fixed)) {
+      if (fixed !== current) img.setAttribute('src', fixed);
+      img.dataset.imageFixLastGood = fixed;
+      img.dataset.imageFixHadGood = '1';
+    } else if (img.dataset.imageFixHadGood === '1' && img.dataset.imageFixLastGood) {
+      const lastGood = img.dataset.imageFixLastGood;
+      if (current !== lastGood) img.setAttribute('src', lastGood);
+    }
+
+    if (img.dataset.imageFixErrorBound === '1') return;
+    img.dataset.imageFixErrorBound = '1';
     img.addEventListener('error', function () {
       const src = img.getAttribute('src') || img.currentSrc || '';
-      const fallback = normalizeLocalAsset(src);
-      if (fallback && fallback !== src && !img.dataset.imageFixRetried) {
+      const fixedSrc = normalizeLocalAsset(src);
+      if (isValidSrc(fixedSrc) && fixedSrc !== src && !img.dataset.imageFixRetried) {
         img.dataset.imageFixRetried = '1';
-        img.setAttribute('src', fallback);
+        img.setAttribute('src', fixedSrc);
+        return;
+      }
+      if (img.dataset.imageFixLastGood && img.dataset.imageFixLastGood !== src && !img.dataset.imageFixRestored) {
+        img.dataset.imageFixRestored = '1';
+        img.setAttribute('src', img.dataset.imageFixLastGood);
         return;
       }
       img.classList.add('image-load-error');
@@ -40,8 +52,8 @@
   function normalizeStyle(el) {
     if (!el || !el.getAttribute) return;
     const style = el.getAttribute('style');
-    if (!style || !style.includes('/images/')) return;
-    const fixed = style.replace(/(['"(])\/images\//g, '$1/');
+    if (!style) return;
+    const fixed = style.replace(/(['\"(])\\/images\\//g, '$1/');
     if (fixed !== style) el.setAttribute('style', fixed);
   }
 
@@ -59,11 +71,17 @@
     scan(document);
     new MutationObserver(function (mutations) {
       for (const mutation of mutations) {
-        if (mutation.type === 'childList') mutation.addedNodes.forEach(node => {
-          if (node.nodeType === 1) scan(node);
-        });
-        if (mutation.type === 'attributes' && mutation.attributeName === 'src') normalizeImage(mutation.target);
-        if (mutation.type === 'attributes' && mutation.attributeName === 'style') normalizeStyle(mutation.target);
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach(function (node) {
+            if (node.nodeType === 1) scan(node);
+          });
+        }
+        if (mutation.type === 'attributes' && mutation.attributeName === 'src') {
+          normalizeImage(mutation.target);
+        }
+        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+          normalizeStyle(mutation.target);
+        }
       }
     }).observe(document.documentElement, {
       subtree: true,
