@@ -1,4 +1,5 @@
 (function(){
+  const CDN='https://cdn.jsdelivr.net/gh/ramcharan291258-bot/Sri-vidya-school@main/';
   const RAW='https://raw.githubusercontent.com/ramcharan291258-bot/Sri-vidya-school/main/';
   const ALIASES={
     'principal-designed.png':'event-portrait.jpeg',
@@ -7,12 +8,14 @@
   function fixUrl(value){
     if(!value || typeof value!=='string') return value;
     const v=value.trim();
-    if(v.startsWith('https://') || v.startsWith('http://') || v.startsWith('data:') || v.startsWith('blob:')) return v;
+    if(v.startsWith('data:') || v.startsWith('blob:')) return v;
     let path='';
     if(v.startsWith('/images/items/')) path=v.slice('/images/items/'.length);
     else if(v.startsWith('/images/')) path=v.slice('/images/'.length);
+    else if(v.startsWith('/')) return v;
     else return v;
-    return RAW+(ALIASES[path]||path);
+    const file=ALIASES[path]||path;
+    return CDN+encodeURI(file);
   }
   function fixBackground(style){
     if(!style) return style;
@@ -22,11 +25,23 @@
       return 'url('+quote+fixUrl(source)+quote+')';
     });
   }
+  function replaceImage(img){
+    const src=img.getAttribute('src');
+    const next=fixUrl(src);
+    if(next && next!==src){
+      img.setAttribute('src',next);
+      img.onerror=function(){
+        const current=img.getAttribute('src')||'';
+        if(current.startsWith(CDN)){
+          const file=current.slice(CDN.length);
+          img.onerror=null;
+          img.setAttribute('src',RAW+file);
+        }
+      };
+    }
+  }
   function fix(){
-    document.querySelectorAll('img').forEach(function(img){
-      const src=img.getAttribute('src'); const next=fixUrl(src);
-      if(next && next!==src) img.setAttribute('src',next);
-    });
+    document.querySelectorAll('img').forEach(replaceImage);
     document.querySelectorAll('[style]').forEach(function(el){
       const style=el.getAttribute('style'); const next=fixBackground(style);
       if(next!==style) el.setAttribute('style',next);
@@ -41,5 +56,5 @@
   const observer=new MutationObserver(fix);
   observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['src','style']});
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',fix); else fix();
-  setTimeout(fix,100); setTimeout(fix,500); setTimeout(fix,1500); setTimeout(fix,3000);
+  [100,500,1500,3000,6000].forEach(function(ms){setTimeout(fix,ms)});
 })();
