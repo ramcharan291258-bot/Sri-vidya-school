@@ -4,12 +4,12 @@ export const seed = {
   heroTitle:'Sri Vidya E.M. School',
   heroSub:'Established 2002 • English Medium • LKG to 7th Class',
   about:'Sri Vidya E.M. School was established in 2002 at Kesavaram, Ganapavaram Mandal, West Godavari District, Andhra Pradesh. The school provides English Medium education from LKG to 7th Class and follows the State Syllabus. Along with academic education, the school encourages students to participate in sports, cultural programmes, science exhibitions, educational tours, yoga, music, dance, drawing, clubs and various celebrations.',
-  heroImage:'/images/hero-campus.png',
-  campusImage:'/images/campus-original.jpeg',
+  heroImage:'/hero-campus.png',
+  campusImage:'/campus-original.jpeg',
   principalName:'Velavalapalli Babji',
   principalRole:'Principal / Correspondent / Chairman',
   principalMessage:'Principal of Sri Vidya E.M. School. The website presents the school leadership with the official supplied photograph and school branding.',
-  principalImage:'/images/principal-designed.png',
+  principalImage:'/principal-designed.png',
   transportTitle:'School Bus & Van Service',
   transportDesc:'School Bus and Van Services are available for students. Contact the school for current route and transport details.',
   busDetails:'School Bus Service available.',
@@ -21,7 +21,17 @@ export const seed = {
   seoTitle:'Sri Vidya E.M. School | English Medium School in Kesavaram',
   seoDesc:'Sri Vidya E.M. School, established in 2002 at Kesavaram, offers English Medium education from LKG to 7th Class.',
   seoKeywords:'Sri Vidya E.M. School, Kesavaram school, English Medium School, West Godavari school, LKG to 7th Class',
-  academics:[], facilities:[], activities:[], gallery:[], news:[]
+  academics:[], facilities:[], activities:[],
+  gallery:[
+    {src:'/campus-original.jpeg',title:'School Campus',cat:'Campus'},
+    {src:'/principal-designed.png',title:'Principal',cat:'Principal'},
+    {src:'/event-group-1.jpeg',title:'School Event',cat:'Events'},
+    {src:'/event-group-2.jpeg',title:'Student Activity',cat:'Activities'},
+    {src:'/event-portrait.jpeg',title:'School Programme',cat:'Events'},
+    {src:'/event-celebration.png',title:'Celebration',cat:'Celebrations'},
+    {src:'/staff-group.png',title:'School Team',cat:'Activities'}
+  ],
+  news:[]
 };
 
 async function findBlob() {
@@ -35,7 +45,19 @@ export async function readData() {
   if (!blob) return seed;
   const res = await fetch(blob.url, { cache: 'no-store' });
   if (!res.ok) throw new Error(`CMS data fetch failed: ${res.status}`);
-  return await res.json();
+  const remote = await res.json();
+  return {
+    ...seed,
+    ...remote,
+    heroImage: remote.heroImage || seed.heroImage,
+    campusImage: remote.campusImage || seed.campusImage,
+    principalImage: remote.principalImage || seed.principalImage,
+    gallery: Array.isArray(remote.gallery) && remote.gallery.length ? remote.gallery : seed.gallery,
+    academics: Array.isArray(remote.academics) ? remote.academics : seed.academics,
+    facilities: Array.isArray(remote.facilities) ? remote.facilities : seed.facilities,
+    activities: Array.isArray(remote.activities) ? remote.activities : seed.activities,
+    news: Array.isArray(remote.news) ? remote.news : seed.news
+  };
 }
 
 export async function writeData(data) {
