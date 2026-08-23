@@ -7,20 +7,21 @@
     <meta name="description" content="Sri Vidya E.M. School, established in 2002 at Kesavaram, West Godavari, offers English Medium education from LKG to 7th Class." />
     <title>Sri Vidya E.M. School | Kesavaram</title>
     <script>
-      /* Asset-path compatibility: the repository stores public assets at the project root,
-         while older CMS data references /images/... paths. Normalize them before/after React renders. */
+      /* Production image compatibility: supplied images live at repository root. */
       (() => {
-        const fallback = {
-          '/principal-designed.png': '/event-portrait.jpeg',
-          '/staff-group.png': '/event-group-1.jpeg',
-          '/images/principal-designed.png': '/event-portrait.jpeg',
-          '/images/staff-group.png': '/event-group-1.jpeg'
-        };
+        const RAW = 'https://raw.githubusercontent.com/ramcharan291258-bot/Sri-vidya-school/main/';
+        const IMAGE_EXT = /\.(?:png|jpe?g|webp|gif|svg|avif)$/i;
         const normalize = (value) => {
           if (!value || typeof value !== 'string') return value;
-          if (fallback[value]) return fallback[value];
-          if (value.startsWith('/images/')) return '/' + value.slice('/images/'.length);
-          return value;
+          if (/^(?:https?:|data:|blob:|\/\/)/i.test(value)) return value;
+          let path = value;
+          if (path.startsWith('/images/')) path = path.slice('/images/'.length);
+          else if (path.startsWith('images/')) path = path.slice('images/'.length);
+          else if (path.startsWith('/')) path = path.slice(1);
+          if (!IMAGE_EXT.test(path)) return value;
+          if (path === 'principal-designed.png') return RAW + 'event-portrait.jpeg';
+          if (path === 'staff-group.png') return RAW + 'event-group-1.jpeg';
+          return RAW + path;
         };
         const fix = (img) => {
           if (!img || !img.getAttribute) return;
@@ -30,23 +31,19 @@
         };
         const originalSetAttribute = Element.prototype.setAttribute;
         Element.prototype.setAttribute = function(name, value) {
-          if (this instanceof HTMLImageElement && String(name).toLowerCase() === 'src') {
-            value = normalize(value);
-          }
+          if (this instanceof HTMLImageElement && String(name).toLowerCase() === 'src') value = normalize(value);
           return originalSetAttribute.call(this, name, value);
         };
-        const originalSrcDescriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
-        if (originalSrcDescriptor?.set) {
+        const descriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+        if (descriptor?.set) {
           Object.defineProperty(HTMLImageElement.prototype, 'src', {
-            configurable: originalSrcDescriptor.configurable,
-            enumerable: originalSrcDescriptor.enumerable,
-            get: originalSrcDescriptor.get,
-            set(value) { originalSrcDescriptor.set.call(this, normalize(value)); }
+            configurable: descriptor.configurable, enumerable: descriptor.enumerable,
+            get: descriptor.get, set(value) { descriptor.set.call(this, normalize(value)); }
           });
         }
         const fixAll = () => document.querySelectorAll('img').forEach(fix);
-        new MutationObserver(fixAll).observe(document.documentElement, {subtree: true, childList: true, attributes: true, attributeFilter: ['src']});
-        window.addEventListener('DOMContentLoaded', fixAll);
+        new MutationObserver(fixAll).observe(document.documentElement, {subtree:true,childList:true,attributes:true,attributeFilter:['src']});
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fixAll); else fixAll();
       })();
     </script>
   </head>
