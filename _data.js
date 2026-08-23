@@ -27,7 +27,7 @@ export const seed = {
     {src:'/images/principal-designed.png',title:'Principal',cat:'Principal'},
     {src:'/images/event-group-1.jpeg',title:'School Event',cat:'Events'},
     {src:'/images/event-group-2.jpeg',title:'Student Activity',cat:'Activities'},
-    {src:'/images/event-portrait.jpeg',title:'School Programme',cat:'Events'},
+    {src:'/images/principal-designed.png',title:'Principal — Official Photo',cat:'Principal'},
     {src:'/images/event-celebration.png',title:'Celebration',cat:'Celebrations'},
     {src:'/images/staff-group.png',title:'School Team',cat:'Activities'}
   ],
@@ -40,9 +40,8 @@ const imageUrl = (value, fallback) => {
   if (/^(https?:|data:|blob:)/i.test(v)) return v;
   if (v.startsWith('/images/')) return v;
   if (v.startsWith('images/')) return `/${v}`;
-  if (/^\/[A-Za-z0-9._-]+\.(?:png|jpe?g|webp|gif|svg)$/i.test(v)) return `/images${v}`;
-  if (/^[A-Za-z0-9._-]+\.(?:png|jpe?g|webp|gif|svg)$/i.test(v)) return `/images/${v}`;
-  return v;
+  if (v.startsWith('/')) return `/images${v}`;
+  return `/images/${v}`;
 };
 
 function normalizeAcademic(item, index) {
